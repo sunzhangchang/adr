@@ -1,0 +1,13 @@
+{
+    "clangd.fallbackFlags": [
+        "-IE:/msys2/ucrt64/include",
+        "-IE:/msys2/ucrt64/include/c++/13.1.0",
+        "-IE:/msys2/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32",
+        "-IE:/msys2/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0",
+        "-ISDL2",
+        "-ISDL2_ttf",
+        "--target=x86_64-w64-mingw32",
+        "-Wall",
+        "-O2"
+    ],
+}
