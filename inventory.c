@@ -59,13 +59,17 @@ void handle_factories(DWORD now) {
         switch (i) {
         case ITEM_WOOD_FAC: {
             Item* wood = inv_get_item(ITEM_WOOD);
-            wood->count += 5 * items[i].active_count;
+            wood->count += 5 * fac->active_count;
             break;
         }
 
         case ITEM_WATER_FAC: {
             Item* water = inv_get_item(ITEM_WATER);
-            water->count += 5 * items[i].active_count;
+            Item* wood = inv_get_item(ITEM_WOOD);
+            int cnt = wood->count / 10;
+            cnt = ((cnt > fac->active_count) ? fac->active_count : cnt);
+            water->count += 5 * cnt;
+            wood->count -= cnt * 10;
             break;
         }
 
