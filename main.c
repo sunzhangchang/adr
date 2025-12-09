@@ -34,8 +34,11 @@ void main_loop(void) {
 
     add_story(get_story_text(STORY_INTRO));
 
+    inv_init();
+
     // 仓库初始为 木头 x15
-    inv_add_new_item(ITEM_WOOD, 15);
+    activate_item(ITEM_WOOD);
+    inv_get_item(ITEM_WOOD)->count = 15;
 
     // 场景初始化
     // 直接动态初始化初始场景（小黑屋）

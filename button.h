@@ -27,7 +27,7 @@ typedef struct {
     ButtonAction action; // 新字段：按钮动作
     int on_complete; // 倒计时结束时触发的内部标记（0 无，1）
     int is_st; // 是否为工厂的启动或停止按钮（0 不是，1 启动，2 停止）
-    ItemType item_idx; // 关联的物品索引（如有）
+    FactoryType fac_id; // 关联的物品索引（如有）
 } Button;
 
 Button new_button(const wchar_t* label, ButtonAction action, int total_time);

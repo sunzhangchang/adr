@@ -234,11 +234,11 @@ void draw_buttons(int left_width, int cols, int rows, const Button buttons[],
         } else {
             if (btn->is_st == 1) {
                 swprintf_s(display_label, 64, L"%s (已启用 x%d)", btn->label,
-                           inv_get_item(btn->item_idx)->active_count);
+                           inv_get_fac(btn->fac_id)->active_count);
             } else if (btn->is_st == 2) {
-                const Item* item = inv_get_item(btn->item_idx);
+                const Factory* fac = inv_get_fac(btn->fac_id);
                 swprintf_s(display_label, 64, L"%s (已暂停 x%d)", btn->label,
-                           item->count - item->active_count);
+                           fac->count - fac->active_count);
             } else {
                 wcsncpy_s(display_label, 64, btn->label, _TRUNCATE);
             }
@@ -276,13 +276,25 @@ void draw_inventory(int left_width, int cols, int rows, int inv_start_x,
     draw_text_utf8(x0 + 8, 4, tmp, (SDL_Color){200, 200, 200, 255});
     int y = inv_start_y + font_h + 4;
 
-    int inv_count = get_inv_count();
-    for (int i = 0; i < inv_count; i++) {
+    int items_count = get_items_count();
+    for (int i = 0; i < items_count; i++) {
         Item* item = inv_get_item(i);
-        if (!item)
+        if (!item || !item->activated)
             continue;
         wchar_t buf[128];
         wsprintfW(buf, L"%s x%d", item->label, item->count);
+        wchar_to_utf8(buf, tmp, sizeof(tmp));
+        draw_text_utf8(x0 + 8, y, tmp, (SDL_Color){200, 200, 200, 255});
+        y += font_h;
+    }
+
+    int facs_count = get_facs_count();
+    for (int i = 0; i < facs_count; i++) {
+        Factory* fac = inv_get_fac(i);
+        if (!fac || !fac->activated)
+            continue;
+        wchar_t buf[128];
+        wsprintfW(buf, L"%s x%d", fac->label, fac->count);
         wchar_to_utf8(buf, tmp, sizeof(tmp));
         draw_text_utf8(x0 + 8, y, tmp, (SDL_Color){200, 200, 200, 255});
         y += font_h;

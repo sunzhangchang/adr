@@ -88,7 +88,7 @@ Button new_button(const wchar_t* label, ButtonAction action, int total_time) {
         .action = action,
         .on_complete = 0,
         .is_st = 0,
-        .item_idx = -1,
+        .fac_id = -1,
     };
     // 若配置中存在指定时间，覆盖
     if (action >= 0 && action < 32 && g_action_time[(int)action] >= 0) {
@@ -148,11 +148,11 @@ static void handle_pre_factory() {
 
         Button glass = new_button(L"生产玻璃", ACT_GLASS, 15);
         scene_add_button(0, &glass);
-        inv_add_new_item(ITEM_GLASS, 0);
+        activate_item(ITEM_GLASS);
 
         Button iron = new_button(L"冶铁", ACT_IRON, 20);
         scene_add_button(0, &iron);
-        inv_add_new_item(ITEM_IRON, 0);
+        activate_item(ITEM_IRON);
 
         fk_pre_factory_flg = 1;
     }
@@ -160,7 +160,7 @@ static void handle_pre_factory() {
 
 static void add_fac_button(const wchar_t* label, ButtonAction action1,
                            ButtonAction action2, ButtonAction action3,
-                           ItemType item_idx) {
+                           FactoryType fac_id) {
     Button fac = new_button(label, action1, 0);
     scene_add_button(0, &fac);
 
@@ -169,14 +169,14 @@ static void add_fac_button(const wchar_t* label, ButtonAction action1,
 
     Button start_fac = new_button(full_label, action2, 0);
     start_fac.is_st = 1;
-    start_fac.item_idx = item_idx;
+    start_fac.fac_id = fac_id;
     scene_add_button(1, &start_fac);
 
     swprintf_s(full_label, 64, L"暂停一个%s", label);
 
     Button stop_fac = new_button(full_label, action3, 0);
     stop_fac.is_st = 2;
-    stop_fac.item_idx = item_idx;
+    stop_fac.fac_id = fac_id;
     scene_add_button(1, &stop_fac);
 }
 
@@ -193,7 +193,7 @@ static void handle_pre_wood_fac(DWORD now) {
 
         Button fac = new_button(L"伐木场", ACT_WOOD_FAC, 0);
         scene_add_button(0, &fac);
-        inv_add_new_fac(ITEM_WOOD_FAC, 0, now);
+        activate_fac(FAC_WOOD, now);
 
         fk_wood_fac_flg = 1;
     }
@@ -220,11 +220,11 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
             Button fishing = new_button(L"捕鱼", ACT_FISH, 10);
             scene_add_button(0, &fishing);
-            inv_add_new_item(ITEM_FOOD, 0);
+            activate_item(ITEM_FOOD);
 
             Button water = new_button(L"获取淡水", ACT_WATER, 10);
             scene_add_button(0, &water);
-            inv_add_new_item(ITEM_WATER, 0);
+            activate_item(ITEM_WATER);
         }
 
         handle_pre_factory();
@@ -274,50 +274,26 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
     }
 
     case ACT_WOOD_FAC: {
-        Item* food = inv_get_item(ITEM_FOOD);
-        Item* wood = inv_get_item(ITEM_WOOD);
-        Item* iron = inv_get_item(ITEM_IRON);
-        Item* fac = inv_get_item(ITEM_WOOD_FAC);
-
-        if (food && food->count >= 20 && wood && wood->count >= 20 && iron &&
-            iron->count >= 10) {
-            food->count -= 20;
-            wood->count -= 20;
-            iron->count -= 10;
-            fac->count += 1;
-            fac->active_count += 1;
-
+        if (build_fac(FAC_WOOD)) {
+            add_story(get_story_text(STORY_WOOD_FAC_FAILED));
+        } else {
             if (!fk_pre_water_fac_flg) {
                 add_story(get_story_text(STORY_PRE_WATER_FAC));
 
                 add_fac_button(L"水厂", ACT_WATER_FAC, ACT_START_WATER_FAC,
-                               ACT_STOP_WATER_FAC, ITEM_WATER_FAC);
+                               ACT_STOP_WATER_FAC, FAC_WATER);
 
-                inv_add_new_fac(ITEM_WATER_FAC, 0, now);
+                activate_fac(FAC_WATER, now);
 
                 fk_pre_water_fac_flg = 1;
             }
-        } else {
-            add_story(get_story_text(STORY_WOOD_FAC_FAILED));
         }
 
         break;
     }
 
     case ACT_WATER_FAC: {
-        Item* food = inv_get_item(ITEM_FOOD);
-        Item* wood = inv_get_item(ITEM_WOOD);
-        Item* iron = inv_get_item(ITEM_IRON);
-        Item* fac = inv_get_item(ITEM_WATER_FAC);
-
-        if (food && food->count >= 20 && wood && wood->count >= 20 && iron &&
-            iron->count >= 10) {
-            food->count -= 20;
-            wood->count -= 20;
-            iron->count -= 10;
-            fac->count += 1;
-            fac->active_count += 1;
-        } else {
+        if (build_fac(FAC_WATER)) {
             add_story(get_story_text(STORY_WATER_FAC_FAILED));
         }
 
@@ -325,7 +301,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
     }
 
     case ACT_START_WATER_FAC: {
-        Item* fac = inv_get_item(ITEM_WATER_FAC);
+        Factory* fac = inv_get_fac(FAC_WATER);
         if (fac->count > fac->active_count) {
             fac->active_count += 1;
         }
@@ -333,7 +309,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
     }
 
     case ACT_STOP_WATER_FAC: {
-        Item* fac = inv_get_item(ITEM_WATER_FAC);
+        Factory* fac = inv_get_fac(FAC_WATER);
         if (fac->active_count > 0) {
             fac->active_count -= 1;
         }
