@@ -114,7 +114,7 @@ static void draw_text_utf8(int x, int y, const char* utf8, SDL_Color color) {
 }
 
 // 公共：清空区域（像素）
-void clear_area(void* ctx, SHORT x, SHORT y, DWORD width, int height) {
+void clear_area(SHORT x, SHORT y, DWORD width, int height) {
     if (!renderer)
         return;
     SDL_Rect r = {x, y, (int)width, height};
@@ -123,7 +123,7 @@ void clear_area(void* ctx, SHORT x, SHORT y, DWORD width, int height) {
 }
 
 // 绘制剧情区
-void redraw_story(void* ctx, int left_width, int rows) {
+void redraw_story(int left_width, int rows) {
     if (!renderer)
         return;
     // 清左侧剧情区
@@ -159,8 +159,8 @@ void redraw_story(void* ctx, int left_width, int rows) {
 }
 
 // 绘制场景列表（位于按钮区顶部）
-void draw_scene_list(void* ctx, int left_width, int cols, int rows,
-                     int selected, int startY, int btn_width) {
+void draw_scene_list(int left_width, int cols, int rows, int selected,
+                     int startY, int btn_width) {
     if (!renderer)
         return;
     int x0 = left_width;
@@ -211,9 +211,9 @@ void draw_scene_list(void* ctx, int left_width, int cols, int rows,
 
 // 修改：draw_buttons 取消覆盖整个按钮区背景，只绘制动作按钮列表（放在指定
 // startY）
-void draw_buttons(void* ctx, int left_width, int cols, int rows,
-                  const Button buttons[], int btn_count, int selected,
-                  int bnt_start_y, int btn_width, const wchar_t* title) {
+void draw_buttons(int left_width, int cols, int rows, const Button buttons[],
+                  int btn_count, int selected, int bnt_start_y, int btn_width,
+                  const wchar_t* title) {
     if (!renderer)
         return;
 
@@ -262,8 +262,8 @@ void draw_buttons(void* ctx, int left_width, int cols, int rows,
 }
 
 // 绘制仓库区域
-void draw_inventory(void* ctx, int left_width, int cols, int rows,
-                    int inv_start_x, int inv_start_y, int inv_width) {
+void draw_inventory(int left_width, int cols, int rows, int inv_start_x,
+                    int inv_start_y, int inv_width) {
     if (!renderer)
         return;
     int x0 = inv_start_x;
@@ -290,21 +290,21 @@ void draw_inventory(void* ctx, int left_width, int cols, int rows,
 }
 
 // init_ui：绘制初始界面并 present
-void init_ui(void* ctx, int left_width, int cols, int rows, int bnt_start_y,
-             int btn_width, int inv_start_x, int inv_width) {
+void init_ui(int left_width, int cols, int rows, int bnt_start_y, int btn_width,
+             int inv_start_x, int inv_width) {
     if (!renderer)
         return;
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    redraw_story(ctx, left_width, rows);
+    redraw_story(left_width, rows);
     // 初始按钮和仓库可以在 main 的 first update_ui_display 调用时绘制
-    draw_inventory(ctx, left_width, cols, rows, inv_start_x, 0, inv_width);
+    draw_inventory(left_width, cols, rows, inv_start_x, 0, inv_width);
     SDL_RenderPresent(renderer);
 }
 
-void update_ui_display(void* ctx, int left_width, int cols, int rows,
-                       int bnt_start_y, int btn_width, int inv_start_x,
-                       int inv_width, int cur_scene) {
+void update_ui_display(int left_width, int cols, int rows, int bnt_start_y,
+                       int btn_width, int inv_start_x, int inv_width,
+                       int cur_scene) {
     if (!renderer)
         return;
     // 清屏
@@ -312,7 +312,7 @@ void update_ui_display(void* ctx, int left_width, int cols, int rows,
     SDL_RenderClear(renderer);
 
     // 剧情区
-    redraw_story(ctx, left_width, rows);
+    redraw_story(left_width, rows);
 
     // 场景列表（顶部）
     // 计算 sceneStartY 使其与 main 中 bnt_start_y 的计算保持一致：
@@ -321,16 +321,16 @@ void update_ui_display(void* ctx, int left_width, int cols, int rows,
     int scene_start_y = bnt_start_y - item_h - 6;
     if (scene_start_y < 0)
         scene_start_y = 8;
-    draw_scene_list(ctx, left_width, cols, rows, cur_scene, scene_start_y,
+    draw_scene_list(left_width, cols, rows, cur_scene, scene_start_y,
                     btn_width);
 
     const Scene* cur_sc = get_scene(cur_scene);
 
     // 动作按钮
-    draw_buttons(ctx, left_width, cols, rows, cur_sc->buttons,
-                 cur_sc->btn_count, 0, bnt_start_y, btn_width, NULL);
+    draw_buttons(left_width, cols, rows, cur_sc->buttons, cur_sc->btn_count, 0,
+                 bnt_start_y, btn_width, NULL);
 
-    draw_inventory(ctx, left_width, cols, rows, inv_start_x, 0, inv_width);
+    draw_inventory(left_width, cols, rows, inv_start_x, 0, inv_width);
 
     SDL_RenderPresent(renderer);
 }

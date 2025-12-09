@@ -5,9 +5,6 @@
 #include "ui.h"
 #include <SDL2/SDL.h>
 #include <locale.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
 #include <windows.h>
 
 void main_loop(void) {
@@ -54,8 +51,8 @@ void main_loop(void) {
     // 现在字体已在 init_sdl_ui 初始化，获取字体高度并计算 btn_start_y
     int scene_item_h = ui_get_font_height() + 8;
     int btn_start_y = scene_start_y + scene_item_h + 6;
-    init_ui(NULL, left_width, cols, rows, btn_start_y, center_width,
-            inv_start_x, inv_width);
+    init_ui(left_width, cols, rows, btn_start_y, center_width, inv_start_x,
+            inv_width);
 
     BOOL running = TRUE;
     Uint32 waitTimeoutMs = 16; // 约 60 FPS
@@ -86,8 +83,8 @@ void main_loop(void) {
         // 构建场景标题数组（供 UI 绘制场景列表）
         scene_cnt = get_scene_count();
         // 更新 UI 显示
-        update_ui_display(NULL, left_width, cols, rows, btn_start_y,
-                          center_width, inv_start_x, inv_width, cur_scene_id);
+        update_ui_display(left_width, cols, rows, btn_start_y, center_width,
+                          inv_start_x, inv_width, cur_scene_id);
 
         // 事件处理（SDL）
         SDL_Event ev;
