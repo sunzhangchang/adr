@@ -203,6 +203,23 @@ static int fk_pre_fish_count = 0;
 
 static int fk_pre_water_fac_flg = 0;
 
+#define FAC_ST(NAME)                                                           \
+    case ACT_START_##NAME##_FAC: {                                             \
+        Factory* fac = inv_get_fac(FAC_##NAME);                                \
+        if (fac->count > fac->active_count) {                                  \
+            fac->active_count += 1;                                            \
+        }                                                                      \
+        break;                                                                 \
+    }                                                                          \
+                                                                               \
+    case ACT_STOP_##NAME##_FAC: {                                              \
+        Factory* fac = inv_get_fac(FAC_##NAME);                                \
+        if (fac->active_count > 0) {                                           \
+            fac->active_count -= 1;                                            \
+        }                                                                      \
+        break;                                                                 \
+    }
+
 void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
     if (idx < 0 || idx >= count)
         return;
@@ -300,21 +317,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
         break;
     }
 
-    case ACT_START_WATER_FAC: {
-        Factory* fac = inv_get_fac(FAC_WATER);
-        if (fac->count > fac->active_count) {
-            fac->active_count += 1;
-        }
-        break;
-    }
-
-    case ACT_STOP_WATER_FAC: {
-        Factory* fac = inv_get_fac(FAC_WATER);
-        if (fac->active_count > 0) {
-            fac->active_count -= 1;
-        }
-        break;
-    }
+        FAC_ST(WATER)
 
     default:
         add_story(L"此按钮尚未实现行为。");
