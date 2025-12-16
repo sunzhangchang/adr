@@ -8,7 +8,12 @@ static const wchar_t story_text[][256] = {
     L"你没有足够的材料来建造伐木场。",
     L"下一步是建造水厂。",
     L"你没有足够的材料来建造水厂。",
-};
+    L"冶铁厂。",
+    L"玻璃厂。",
+    L"你没有足够的材料来建造冶铁厂。",
+    L"你没有足够的材料来建造玻璃厂。",
+    L"食品加工厂。",
+    L"你没有足够的材料来建造食品加工厂。"};
 
 const wchar_t* get_story_text(int idx) {
     return (idx < 0 || idx >= sizeof(story_text) / sizeof(story_text[0]))

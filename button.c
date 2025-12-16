@@ -202,6 +202,8 @@ static void handle_pre_wood_fac(DWORD now) {
 static int fk_pre_fish_count = 0;
 
 static int fk_pre_water_fac_flg = 0;
+static int fk_pre_iron_glass_fac_flg = 0;
+static int fk_pre_food_fac_flg = 0;
 
 #define FAC_ST(NAME)                                                           \
     case ACT_START_##NAME##_FAC: {                                             \
@@ -312,12 +314,70 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
     case ACT_WATER_FAC: {
         if (build_fac(FAC_WATER)) {
             add_story(get_story_text(STORY_WATER_FAC_FAILED));
+        } else {
+            if (!fk_pre_iron_glass_fac_flg) {
+                add_story(get_story_text(STORY_PRE_IRON_FAC));
+
+                add_fac_button(L"冶炼厂", ACT_IRON_FAC, ACT_START_IRON_FAC,
+                               ACT_STOP_IRON_FAC, FAC_IRON);
+
+                activate_fac(FAC_IRON, now);
+
+                add_story(get_story_text(STORY_PRE_GLASS_FAC));
+
+                add_fac_button(L"玻璃厂", ACT_GLASS_FAC, ACT_START_GLASS_FAC,
+                               ACT_STOP_GLASS_FAC, FAC_GLASS);
+
+                activate_fac(FAC_GLASS, now);
+
+                fk_pre_iron_glass_fac_flg = 1;
+            }
         }
 
         break;
     }
 
         FAC_ST(WATER)
+
+    case ACT_IRON_FAC: {
+        if (build_fac(FAC_IRON)) {
+            add_story(get_story_text(STORY_IRON_FAC_FAILED));
+        }
+
+        break;
+    }
+
+        FAC_ST(IRON)
+
+    case ACT_GLASS_FAC: {
+        if (build_fac(FAC_GLASS)) {
+            add_story(get_story_text(STORY_GLASS_FAC_FAILED));
+        } else {
+            if (!fk_pre_food_fac_flg) {
+                add_story(get_story_text(STORY_PRE_FOOD_FAC));
+
+                add_fac_button(L"食品加工厂", ACT_FOOD_FAC, ACT_START_FOOD_FAC,
+                               ACT_STOP_FOOD_FAC, FAC_FOOD);
+
+                activate_fac(FAC_FOOD, now);
+
+                fk_pre_food_fac_flg = 1;
+            }
+        }
+        break;
+    }
+
+        FAC_ST(GLASS)
+
+    case ACT_FOOD_FAC: {
+        if (build_fac(FAC_FOOD)) {
+            add_story(get_story_text(STORY_FOOD_FAC_FAILED));
+        }
+
+        break;
+    }
+
+        FAC_ST(FOOD)
 
     default:
         add_story(L"此按钮尚未实现行为。");

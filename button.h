@@ -6,15 +6,24 @@
 // 按钮动作枚举
 typedef enum {
     ACT_NONE = 0,
-    ACT_WOOD,            // 伐木
-    ACT_FISH,            // 捕鱼
-    ACT_WATER,           // 取水
-    ACT_GLASS,           // 生产玻璃
-    ACT_IRON,            // 冶铁
-    ACT_WOOD_FAC,        // 伐木场
-    ACT_WATER_FAC,       // 水厂
+    ACT_WOOD,      // 伐木
+    ACT_FISH,      // 捕鱼
+    ACT_WATER,     // 取水
+    ACT_GLASS,     // 生产玻璃
+    ACT_IRON,      // 冶铁
+    ACT_WOOD_FAC,  // 伐木场
+    ACT_WATER_FAC, // 水厂
+    ACT_IRON_FAC,
+    ACT_GLASS_FAC,
+    ACT_FOOD_FAC,
     ACT_START_WATER_FAC, // 启用水厂
     ACT_STOP_WATER_FAC,  // 停止水厂
+    ACT_START_IRON_FAC,
+    ACT_STOP_IRON_FAC,
+    ACT_START_GLASS_FAC,
+    ACT_STOP_GLASS_FAC,
+    ACT_START_FOOD_FAC,
+    ACT_STOP_FOOD_FAC,
 } ButtonAction;
 
 // Button 模型
