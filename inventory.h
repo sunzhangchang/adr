@@ -23,6 +23,7 @@ typedef enum {
 typedef struct {
     wchar_t label[32];
     int count;
+    int output;
     int activated;
 } Item;
 
@@ -43,7 +44,7 @@ typedef struct {
     int count;
     int activated;
 
-    int active_count; // 工厂已启用的数量
+    int active_count; // 不要直接修改这个值！！！工厂已启用的数量
     int end_tick;
 
     Ingredient ing;
@@ -64,3 +65,6 @@ Factory* inv_get_fac(int id);
 int build_fac(int id);
 
 void handle_factories(DWORD now);
+
+// 用这个函数修改 active_count！！！
+void fac_add_active_count(Factory* fac, int delta);

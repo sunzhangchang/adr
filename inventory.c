@@ -45,6 +45,7 @@ static void reg_item(int id, const wchar_t* label) {
     *it = (Item){
         .label = L"",
         .count = 0,
+        .output = 0,
         .activated = 0,
     };
     wcsncpy_s(it->label, 32, label, _TRUNCATE);
@@ -112,7 +113,7 @@ int build_fac(int id) {
         it->count -= ing->num[i];
     }
     fac->count += 1;
-    fac->active_count += 1;
+    fac_add_active_count(fac, +1);
     return 0;
 }
 
@@ -149,4 +150,18 @@ void handle_factories(DWORD now) {
 
         fac->end_tick = now + 10 * 1000;
     }
+}
+
+void fac_add_active_count(Factory* fac, int delta) {
+    fac->active_count += delta;
+
+    const Yield* yd = &fac->yield;
+    const Ingredient* inputs = &yd->inputs;
+    for (int i = 0; i < inputs->count; ++i) {
+        Item* it = inv_get_item(inputs->id[i]);
+        it->output -= delta * inputs->num[i];
+    }
+
+    Item* out = inv_get_item(yd->output_id);
+    out->output += delta * yd->output_num;
 }

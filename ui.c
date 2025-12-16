@@ -272,7 +272,7 @@ void draw_inventory(int left_width, int cols, int rows, int inv_start_x,
     SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
     SDL_RenderFillRect(renderer, &area);
     char tmp[256];
-    wchar_to_utf8(L"仓库", tmp, sizeof(tmp));
+    wchar_to_utf8(L"仓库 | 每 10 秒产量", tmp, sizeof(tmp));
     draw_text_utf8(x0 + 8, 4, tmp, (SDL_Color){200, 200, 200, 255});
     int y = inv_start_y + font_h + 4;
 
@@ -282,7 +282,7 @@ void draw_inventory(int left_width, int cols, int rows, int inv_start_x,
         if (!item || !item->activated)
             continue;
         wchar_t buf[128];
-        wsprintfW(buf, L"%s x%d", item->label, item->count);
+        wsprintfW(buf, L"%s x%d | %+d", item->label, item->count, item->output);
         wchar_to_utf8(buf, tmp, sizeof(tmp));
         draw_text_utf8(x0 + 8, y, tmp, (SDL_Color){200, 200, 200, 255});
         y += font_h;

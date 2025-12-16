@@ -94,7 +94,7 @@ Button new_button(const wchar_t* label, ButtonAction action, int total_time) {
     if (action >= 0 && action < 32 && g_action_time[(int)action] >= 0) {
         btn.total_time = g_action_time[(int)action];
     }
-    wcsncpy_s(btn.label, 32, label, _TRUNCATE);
+    wcsncpy_s(btn.label, 64, label, _TRUNCATE);
     return btn;
 }
 
@@ -191,7 +191,8 @@ static void handle_pre_wood_fac(DWORD now) {
 
         scene_add_scene(L"工厂");
 
-        Button fac = new_button(L"伐木场", ACT_WOOD_FAC, 0);
+        Button fac =
+            new_button(L"伐木场: 食物 -20 木头 -20 钢铁 -10", ACT_WOOD_FAC, 0);
         scene_add_button(0, &fac);
         activate_fac(FAC_WOOD, now);
 
@@ -209,7 +210,7 @@ static int fk_pre_food_fac_flg = 0;
     case ACT_START_##NAME##_FAC: {                                             \
         Factory* fac = inv_get_fac(FAC_##NAME);                                \
         if (fac->count > fac->active_count) {                                  \
-            fac->active_count += 1;                                            \
+            fac_add_active_count(fac, +1);                                     \
         }                                                                      \
         break;                                                                 \
     }                                                                          \
@@ -217,7 +218,7 @@ static int fk_pre_food_fac_flg = 0;
     case ACT_STOP_##NAME##_FAC: {                                              \
         Factory* fac = inv_get_fac(FAC_##NAME);                                \
         if (fac->active_count > 0) {                                           \
-            fac->active_count -= 1;                                            \
+            fac_add_active_count(fac, -1);                                     \
         }                                                                      \
         break;                                                                 \
     }
@@ -299,7 +300,8 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
             if (!fk_pre_water_fac_flg) {
                 add_story(get_story_text(STORY_PRE_WATER_FAC));
 
-                add_fac_button(L"水厂", ACT_WATER_FAC, ACT_START_WATER_FAC,
+                add_fac_button(L"水厂:     食物 -20 木头 -20 钢铁 -10",
+                               ACT_WATER_FAC, ACT_START_WATER_FAC,
                                ACT_STOP_WATER_FAC, FAC_WATER);
 
                 activate_fac(FAC_WATER, now);
@@ -318,14 +320,16 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
             if (!fk_pre_iron_glass_fac_flg) {
                 add_story(get_story_text(STORY_PRE_IRON_FAC));
 
-                add_fac_button(L"冶炼厂", ACT_IRON_FAC, ACT_START_IRON_FAC,
+                add_fac_button(L"冶炼厂: 食物 -20 木头 -20 钢铁 -10",
+                               ACT_IRON_FAC, ACT_START_IRON_FAC,
                                ACT_STOP_IRON_FAC, FAC_IRON);
 
                 activate_fac(FAC_IRON, now);
 
                 add_story(get_story_text(STORY_PRE_GLASS_FAC));
 
-                add_fac_button(L"玻璃厂", ACT_GLASS_FAC, ACT_START_GLASS_FAC,
+                add_fac_button(L"玻璃厂: 食物 -20 木头 -20 钢铁 -10",
+                               ACT_GLASS_FAC, ACT_START_GLASS_FAC,
                                ACT_STOP_GLASS_FAC, FAC_GLASS);
 
                 activate_fac(FAC_GLASS, now);
@@ -356,8 +360,10 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
             if (!fk_pre_food_fac_flg) {
                 add_story(get_story_text(STORY_PRE_FOOD_FAC));
 
-                add_fac_button(L"食品加工厂", ACT_FOOD_FAC, ACT_START_FOOD_FAC,
-                               ACT_STOP_FOOD_FAC, FAC_FOOD);
+                add_fac_button(
+                    L"食品加工厂: 食物 -20 木头 -20 钢铁 -10 玻璃 -20",
+                    ACT_FOOD_FAC, ACT_START_FOOD_FAC, ACT_STOP_FOOD_FAC,
+                    FAC_FOOD);
 
                 activate_fac(FAC_FOOD, now);
 
