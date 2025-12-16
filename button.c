@@ -318,14 +318,12 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
             add_story(get_story_text(STORY_WATER_FAC_FAILED));
         } else {
             if (!fk_pre_iron_glass_fac_flg) {
-                add_story(get_story_text(STORY_PRE_IRON_FAC));
+                add_story(get_story_text(STORY_PRE_IRON_GLASS_FAC));
 
                 add_fac_button(L"冶炼厂", ACT_IRON_FAC, ACT_START_IRON_FAC,
                                ACT_STOP_IRON_FAC, FAC_IRON);
 
                 activate_fac(FAC_IRON, now);
-
-                add_story(get_story_text(STORY_PRE_GLASS_FAC));
 
                 add_fac_button(L"玻璃厂", ACT_GLASS_FAC, ACT_START_GLASS_FAC,
                                ACT_STOP_GLASS_FAC, FAC_GLASS);
