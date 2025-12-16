@@ -4,11 +4,9 @@
 #include <string.h>
 #include <windows.h>
 
-// 使用可变数组存放场景（初始由 init_scenes 填充）
 static Scene scenes[MAX_SCENES];
 static int scene_count = 0;
 
-// 现有 init_scenes 改为仅填充默认小黑屋（动态添加其它场景）
 void init_scenes(void) {
     scene_count = 0;
     Scene* s0 = &scenes[scene_count++];
@@ -56,7 +54,7 @@ void scene_set_title(int scene_idx, const wchar_t* title) {
     wcsncpy_s(scenes[scene_idx].title, MAX_SCENE_TITLE_LEN, title, _TRUNCATE);
 }
 
-// 新增：按标题查找场景索引
+// 按标题查找场景索引
 int scene_find_by_title(const wchar_t* title) {
     if (!title)
         return -1;
@@ -67,7 +65,7 @@ int scene_find_by_title(const wchar_t* title) {
     return -1;
 }
 
-// 新增：动态创建场景（空按钮列表）
+// 动态创建场景
 int scene_add_scene(const wchar_t* title) {
     if (!title)
         return -1;
