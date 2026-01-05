@@ -5,6 +5,7 @@ static int inv_count = 0;
 static Factory facs[MAX_INVENTORY_ITEMS];
 static int fac_count = 0;
 
+// 这里采用注册表的方式初始化物品和工厂  TODO: 可以改成从配置文件加载
 static const wchar_t* item_labels[] = {
     L"木头", // ITEM_WOOD
     L"食物", // ITEM_FOOD
@@ -23,27 +24,31 @@ static const wchar_t* fac_labels[] = {
     L"造船厂",     // FAC_SHIP
 };
 
+// 建造工厂所需材料
 static const Ingredient ings[] = {
     {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {20, 20, 10}, 3},
     {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {20, 20, 10}, 3},
     {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {20, 20, 10}, 3},
     {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {20, 20, 10}, 3},
-    {{ITEM_FOOD, ITEM_WOOD, ITEM_GLASS, ITEM_IRON}, {20, 20, 20, 10}, 4},
+    {{ITEM_FOOD, ITEM_WOOD, ITEM_GLASS, ITEM_IRON}, {20, 20, 40, 10}, 4},
     {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {50, 50, 30}, 3},
 };
 
+// 工厂产出
 static const Yield yield[] = {
-    {{{}, {}, 0}, ITEM_WOOD, 10},
-    {{{ITEM_WOOD}, {10}, 1}, ITEM_WATER, 10},
-    {{{ITEM_WATER, ITEM_WOOD}, {10, 20}, 2}, ITEM_IRON, 5},
-    {{{ITEM_WATER, ITEM_WOOD}, {10, 10}, 2}, ITEM_GLASS, 5},
-    {{{ITEM_WATER, ITEM_GLASS}, {20, 10}, 1}, ITEM_FOOD, 5},
+    {{{}, {}, 0}, ITEM_WOOD, 1000},
+    {{{ITEM_WOOD}, {10}, 1}, ITEM_WATER, 1000},
+    {{{ITEM_WATER, ITEM_WOOD}, {10, 20}, 2}, ITEM_IRON, 500},
+    {{{ITEM_WATER, ITEM_WOOD}, {10, 10}, 2}, ITEM_GLASS, 500},
+    {{{ITEM_WATER, ITEM_GLASS}, {20, 10}, 1}, ITEM_FOOD, 500},
     {{{}, {}, 0}, -1, 0},
 };
 
 int get_items_count() { return inv_count; }
 int get_facs_count() { return fac_count; }
 
+// 物品和工厂初始为未激活状态，激活后显示在界面上
+// 注册物品
 static void reg_item(int id, const wchar_t* label) {
     Item* it = &items[id];
     *it = (Item){
@@ -56,6 +61,7 @@ static void reg_item(int id, const wchar_t* label) {
     wprintf(L"Registered item: %s\n", it->label);
 }
 
+// 注册工厂
 static void reg_fac(int id, const wchar_t* label, const Ingredient* ing,
                     const Yield* yd) {
     Factory* fac = &facs[id];
@@ -72,6 +78,7 @@ static void reg_fac(int id, const wchar_t* label, const Ingredient* ing,
     wprintf(L"Registered factory: %s\n", fac->label);
 }
 
+// 初始化仓库系统
 void inv_init() {
     inv_count = sizeof(item_labels) / sizeof(item_labels[0]);
     for (int i = 0; i < inv_count; ++i) {
@@ -84,6 +91,7 @@ void inv_init() {
     }
 }
 
+// 激活物品
 void activate_item(int id) {
     if (id < MAX_INVENTORY_ITEMS) {
         items[id].activated = 1;
@@ -91,6 +99,7 @@ void activate_item(int id) {
     }
 }
 
+// 激活工厂
 void activate_fac(int id, DWORD now) {
     if (id < MAX_INVENTORY_ITEMS) {
         facs[id].activated = 1;
@@ -99,9 +108,11 @@ void activate_fac(int id, DWORD now) {
     }
 }
 
+// getter
 Item* inv_get_item(int id) { return &items[id]; }
 Factory* inv_get_fac(int id) { return &facs[id]; }
 
+// 建造工厂，返回 0 表示成功，1 表示失败（材料不足）
 int build_fac(int id) {
     Factory* fac = &facs[id];
     Ingredient* ing = &fac->ing;
@@ -121,12 +132,14 @@ int build_fac(int id) {
     return 0;
 }
 
+// 处理所有工厂的生产过程
 void handle_factories(DWORD now) {
     for (int i = 0; i < fac_count; i++) {
         Factory* fac = &facs[i];
         if (!fac->activated)
             continue;
 
+        // 检查工厂是否到达生产时间
         int remaining =
             (int)((fac->end_tick > now) ? ((fac->end_tick - now + 999) / 1000)
                                         : 0);
@@ -137,6 +150,7 @@ void handle_factories(DWORD now) {
 
         const Ingredient* inputs = &(fac->yield.inputs);
 
+        // num 为最大可生产数量
         int num = 1e9;
         for (int j = 0; j < inputs->count; ++j) {
             Item* it = inv_get_item(inputs->id[j]);
@@ -149,16 +163,20 @@ void handle_factories(DWORD now) {
             it->count -= inputs->num[j] * num;
         }
 
+        // 更新生产物品的数量
         Item* out = inv_get_item(fac->yield.output_id);
         out->count += fac->yield.output_num * num;
 
+        // 重置工厂的生产计时器
         fac->end_tick = now + 10 * 1000;
     }
 }
 
+// 用这个函数修改 active_count！！！
 void fac_add_active_count(Factory* fac, int delta) {
     fac->active_count += delta;
 
+    // 更新输入输出物品的产出速率
     const Yield* yd = &fac->yield;
     const Ingredient* inputs = &yd->inputs;
     for (int i = 0; i < inputs->count; ++i) {

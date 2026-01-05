@@ -3,14 +3,14 @@
 #include "story.h"
 #include <stdio.h>
 
-// 全局动作时间映射：-1 表示未配置
-static int g_action_time[32]; // 足够容纳动作枚举
+// 记录从配置文件加载的各按钮的倒计时
+static int g_action_time[32];
 static void init_action_time_map(void) {
     for (int i = 0; i < 32; i++)
         g_action_time[i] = -1;
 }
 
-// 按动作名映射到枚举
+// 按按钮名映射到枚举
 static ButtonAction action_from_string_local(const char* s) {
     if (!s)
         return ACT_NONE;
@@ -40,6 +40,9 @@ static ButtonAction action_from_string_local(const char* s) {
         return ACT_STOP_SHIP_FAC;
     if (strcmp(s, "ACT_SHIP") == 0)
         return ACT_SHIP;
+
+    if (strcmp(s, "ACT_SAIL") == 0)
+        return ACT_SAIL;
     return ACT_NONE;
 }
 
@@ -65,7 +68,7 @@ int load_button_times(const char* path) {
         *eq = 0;
         char* key = p;
         char* val = eq + 1;
-        // trim trailing
+        // 去掉尾部空白
         char* end = key + strlen(key) - 1;
         while (end >= key && (*end == ' ' || *end == '\t'))
             *end-- = 0;
@@ -85,7 +88,7 @@ int load_button_times(const char* path) {
     return 0;
 }
 
-// 修改 new_button：如果配置中为该 action 指定了时间则覆盖传入 total_time
+// 新增按钮。如果配置中为该 action 指定了时间，则覆盖传入的 total_time
 Button new_button(const wchar_t* label, ButtonAction action, int total_time) {
     Button btn = (Button){
         .label = L"",
@@ -102,10 +105,12 @@ Button new_button(const wchar_t* label, ButtonAction action, int total_time) {
     if (action >= 0 && action < 32 && g_action_time[(int)action] >= 0) {
         btn.total_time = g_action_time[(int)action];
     }
+    wprintf(L"%s button created with total_time=%d\n", label, btn.total_time);
     wcsncpy_s(btn.label, 64, label, _TRUNCATE);
     return btn;
 }
 
+// 启动按钮倒计时
 static inline void start_countdown(Button* b, DWORD now) {
     if (b->total_time > 0) {
         b->countdown = b->total_time;
@@ -113,9 +118,8 @@ static inline void start_countdown(Button* b, DWORD now) {
     }
 }
 
-// 处理单个按钮倒计时结束后的行为（从 update_button_countdown 调用）
+// 处理单个按钮倒计时结束后的行为，本来有用的，现在没用了
 static void handle_button_completion(Button* buttons, int idx, int count) {
-    // buttons[idx] 刚刚从倒计时运行态变为结束态
     Button* b = &buttons[idx];
 
     // 根据 action 作后续处理
@@ -125,7 +129,7 @@ static void handle_button_completion(Button* buttons, int idx, int count) {
     }
 }
 
-// 修改：update_button_countdown 接收 GameState*
+// 更新按钮倒计时
 void update_button_countdown(Button* buttons, int count, DWORD now) {
     for (int i = 0; i < count; i++) {
         if (buttons[i].active && buttons[i].countdown > 0) {
@@ -145,6 +149,7 @@ void update_button_countdown(Button* buttons, int count, DWORD now) {
     }
 }
 
+// 解锁玻璃厂和冶炼厂按钮
 static int fk_pre_factory_flg = 0;
 static void handle_pre_factory() {
     Item* food = inv_get_item(ITEM_FOOD);
@@ -166,6 +171,7 @@ static void handle_pre_factory() {
     }
 }
 
+// 添加工厂按钮及其启动/暂停按钮
 static void add_fac_button(const wchar_t* label, ButtonAction action1,
                            ButtonAction action2, ButtonAction action3,
                            FactoryType fac_id) {
@@ -189,6 +195,7 @@ static void add_fac_button(const wchar_t* label, ButtonAction action1,
     scene_add_button(1, &stop_fac);
 }
 
+// 解锁伐木场按钮
 static int fk_wood_fac_flg = 0;
 static void handle_pre_wood_fac(DWORD now) {
     Item* glass = inv_get_item(ITEM_GLASS);
@@ -200,6 +207,7 @@ static void handle_pre_wood_fac(DWORD now) {
 
         scene_add_scene(L"工厂");
 
+        // 伐木场因为不消耗资源所以不用加启动/暂停按钮
         Button btn = new_button(L"伐木场", ACT_WOOD_FAC, 0);
         btn.fac_id = FAC_WOOD;
         scene_add_button(0, &btn);
@@ -209,6 +217,7 @@ static void handle_pre_wood_fac(DWORD now) {
     }
 }
 
+// 各种标记
 static int fk_pre_fish_count = 0;
 
 static int fk_pre_water_fac_flg = 0;
@@ -217,7 +226,9 @@ static int fk_pre_food_fac_flg = 0;
 static int fk_pre_ship_fac_flg = 0;
 
 static int fk_ship_btn = 0;
+static int fk_sail_btn = 0;
 
+// 工厂启动/暂停处理宏，简化代码
 #define FAC_ST(NAME)                                                           \
     case ACT_START_##NAME##_FAC: {                                             \
         Factory* fac = inv_get_fac(FAC_##NAME);                                \
@@ -235,9 +246,27 @@ static int fk_ship_btn = 0;
         break;                                                                 \
     }
 
+// Beta分布的近似计算函数（简化处理）
+double calc_success_rate(double a1, double b1, double rate, int num) {
+    double a = a1 + rate * num;
+    double b = b1;
+    // 根据Beta分布的性质，计算成功概率（这里简化处理为直接使用Beta分布的均值作为概率）
+    return a / (a + b);
+}
+
+// 判断是否返航成功
+int is_success(double success_rate) {
+    return (double)rand() < success_rate * RAND_MAX;
+}
+
+// 水声资料收集完成度
+static double finish_rate = 0;
+
+// 处理按钮点击事件
 void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
     if (idx < 0 || idx >= count)
         return;
+
     Button* b = &buttons[idx];
 
     switch (b->action) {
@@ -245,8 +274,9 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
         ++fk_pre_fish_count;
 
         Item* wood = inv_get_item(ITEM_WOOD);
-        wood->count += 10;
+        wood->count += 1000;
 
+        // 点击两次伐木后解锁捕鱼和取水按钮
         if (fk_pre_fish_count == 2) {
             add_story(get_story_text(STORY_TALK));
 
@@ -267,7 +297,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_FISH: {
         Item* food = inv_get_item(ITEM_FOOD);
-        food->count += 10;
+        food->count += 1000;
 
         handle_pre_factory();
 
@@ -277,7 +307,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_WATER: {
         Item* water = inv_get_item(ITEM_WATER);
-        water->count += 10;
+        water->count += 1000;
 
         handle_pre_factory();
 
@@ -287,7 +317,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_GLASS: {
         Item* glass = inv_get_item(ITEM_GLASS);
-        glass->count += 5;
+        glass->count += 500;
 
         handle_pre_wood_fac(now);
 
@@ -297,7 +327,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_IRON: {
         Item* iron = inv_get_item(ITEM_IRON);
-        iron->count += 5;
+        iron->count += 500;
 
         handle_pre_wood_fac(now);
 
@@ -307,8 +337,10 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_WOOD_FAC: {
         if (build_fac(FAC_WOOD)) {
+            // 伐木场建造失败
             add_story(get_story_text(STORY_WOOD_FAC_FAILED));
         } else {
+            // 伐木场建造成功，解锁水厂
             if (!fk_pre_water_fac_flg) {
                 add_story(get_story_text(STORY_PRE_WATER_FAC));
 
@@ -326,8 +358,10 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_WATER_FAC: {
         if (build_fac(FAC_WATER)) {
+            // 水厂建造失败
             add_story(get_story_text(STORY_WATER_FAC_FAILED));
         } else {
+            // 水厂建造成功，解锁玻璃厂和冶炼厂
             if (!fk_pre_iron_glass_fac_flg) {
                 add_story(get_story_text(STORY_PRE_IRON_GLASS_FAC));
 
@@ -352,6 +386,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_IRON_FAC: {
         if (build_fac(FAC_IRON)) {
+            // 冶炼厂建造失败
             add_story(get_story_text(STORY_IRON_FAC_FAILED));
         }
 
@@ -362,8 +397,10 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_GLASS_FAC: {
         if (build_fac(FAC_GLASS)) {
+            // 玻璃厂建造失败
             add_story(get_story_text(STORY_GLASS_FAC_FAILED));
         } else {
+            // 玻璃厂建造成功，解锁食品加工厂
             if (!fk_pre_food_fac_flg) {
                 add_story(get_story_text(STORY_PRE_FOOD_FAC));
 
@@ -382,9 +419,11 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_FOOD_FAC: {
         if (build_fac(FAC_FOOD)) {
+            // 食品加工厂建造失败
             add_story(get_story_text(STORY_FOOD_FAC_FAILED));
         } else {
             if (!fk_pre_ship_fac_flg) {
+                // 食品加工厂建造成功，解锁造船厂
                 add_story(get_story_text(STORY_PRE_SHIP_FAC));
 
                 add_fac_button(L"造船厂", ACT_SHIP_FAC, ACT_START_SHIP_FAC,
@@ -403,6 +442,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_SHIP_FAC: {
         if (build_fac(FAC_SHIP)) {
+            // 造船厂建造失败
             add_story(get_story_text(STORY_SHIP_FAC_FAILED));
         } else {
             // 造船厂建成后可解锁造船按钮
@@ -424,6 +464,8 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_SHIP: {
         int fac_cnt = inv_get_fac(FAC_SHIP)->active_count;
+
+        // 没有已启用的造船厂
         if (fac_cnt == 0) {
             add_story(get_story_text(STORY_NO_ACTIVE_SHIP_FAC));
             break;
@@ -438,9 +480,15 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
         int glass_needed = fac_cnt * 20;
         int iron_needed = fac_cnt * 40;
 
+        // 材料不足
         if (wood->count < wood_needed || glass->count < glass_needed ||
             iron->count < iron_needed) {
             add_story(get_story_text(STORY_SHIP_FAILED));
+
+            wchar_t txt[256];
+            swprintf_s(txt, 256, L"造船需要材料：木头 %d，玻璃 %d，钢铁 %d。",
+                       wood_needed, glass_needed, iron_needed);
+            add_story(txt);
             break;
         }
 
@@ -448,6 +496,72 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
         wood->count -= wood_needed;
         glass->count -= glass_needed;
         iron->count -= iron_needed;
+
+        if (!fk_sail_btn) {
+            // 解锁出航按钮
+            Button sail = new_button(L"出航", ACT_SAIL, 0);
+            scene_add_button(0, &sail);
+            fk_sail_btn = 1;
+
+            add_story(get_story_text(STORY_SAIL_NOTICE));
+        }
+
+        wchar_t txt[256];
+        swprintf_s(txt, 256, L"当前返航成功率: %.2f%%。",
+                   calc_success_rate(1.0, 2.0, 0.7, ship->count) * 100.0);
+        add_story(txt);
+
+        start_countdown(b, now);
+        break;
+    }
+
+    case ACT_SAIL: {
+        Item* ship = inv_get_item(ITEM_SHIP);
+        Item* food = inv_get_item(ITEM_FOOD);
+        Item* water = inv_get_item(ITEM_WATER);
+
+        int ship_consumed = ship->count;
+        int food_needed = 40 * ship_consumed;
+        int water_needed = 40 * ship_consumed;
+
+        if (ship->count < 1 || food->count < food_needed ||
+            water->count < water_needed) {
+            wchar_t txt[256];
+            swprintf_s(txt, 256, L"出航需要：食物 %d，淡水 %d。", food_needed,
+                       water_needed);
+            add_story(txt);
+
+            add_story(get_story_text(STORY_CANNOT_SAIL));
+        } else {
+            add_story(get_story_text(STORY_SAIL));
+
+            food->count -= food_needed;
+            water->count -= water_needed;
+
+            // 此处简化为用概率计算  TODO: 航海冒险
+            if (is_success(calc_success_rate(1.0, 2.0, 0.7, ship_consumed))) {
+                add_story(get_story_text(STORY_SAIL_SUCCEEDED));
+
+                finish_rate +=
+                    calc_success_rate(0.1, 10.0, 0.7, ship_consumed) * 100.0;
+
+                finish_rate = (finish_rate > 100.0 ? 100.0 : finish_rate);
+
+                wchar_t txt[256];
+                swprintf_s(txt, 256, L"水声资料完成度为 %.2f%%。", finish_rate);
+
+                add_story(txt);
+
+                if (finish_rate >= 100.0) {
+                    add_story(get_story_text(STORY_GAME_WON));
+                }
+            } else {
+                ship->count -= ship_consumed;
+                add_story(get_story_text(STORY_SAIL_FAILED));
+            }
+        }
+
+        start_countdown(b, now);
         break;
     }
 

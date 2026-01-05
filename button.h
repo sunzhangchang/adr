@@ -3,7 +3,7 @@
 #include <wchar.h>
 #include <windows.h>
 
-// 按钮动作枚举
+// 按钮动作枚举，以 ACT_ 开头
 typedef enum {
     ACT_NONE = 0,
     ACT_WOOD,      // 伐木
@@ -28,9 +28,11 @@ typedef enum {
     ACT_START_SHIP_FAC,
     ACT_STOP_SHIP_FAC,
     ACT_SHIP, // 造船
+
+    ACT_SAIL // 出航
 } ButtonAction;
 
-// Button 模型
+// Button 结构体
 typedef struct {
     wchar_t label[64];
     int active;          // 是否显示
@@ -43,12 +45,13 @@ typedef struct {
     FactoryType fac_id; // 关联的物品索引（如有）
 } Button;
 
+// 创建新按钮
 Button new_button(const wchar_t* label, ButtonAction action, int total_time);
 
-// 更新按钮倒计时显示（使用 GameState）
+// 更新按钮倒计时显示
 void update_button_countdown(Button* buttons, int count, DWORD now);
 
-// 处理按钮点击（使用 GameState）
+// 处理按钮点击
 void handle_button_click(Button* buttons, int count, int btnIndex, DWORD now);
 
 // 从配置文件加载按钮倒计时，path 可为 "button_times.cfg"，返回 0 成功，非0失败

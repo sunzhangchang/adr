@@ -2,6 +2,7 @@
 
 #include <wchar.h>
 
+// 剧情文本枚举，以 STORY_ 开头
 enum StoryText {
     STORY_INTRO = 0,
     STORY_TALK,
@@ -20,6 +21,13 @@ enum StoryText {
     STORY_SHIP_FAC_SUCCEEDED,
     STORY_NO_ACTIVE_SHIP_FAC,
     STORY_SHIP_FAILED,
+
+    STORY_SAIL,
+    STORY_SAIL_NOTICE,
+    STORY_CANNOT_SAIL,
+    STORY_SAIL_FAILED,
+    STORY_SAIL_SUCCEEDED,
+    STORY_GAME_WON,
 };
 
 const wchar_t* get_story_text(int idx);
