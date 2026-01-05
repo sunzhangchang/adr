@@ -13,11 +13,11 @@
 static SDL_Window* win = NULL;
 static SDL_Renderer* renderer = NULL;
 static TTF_Font* font = NULL;
-static int win_w = 800;
+static int win_w = 1000;
 static int win_h = 600;
 static int font_h = 18;
 
-// 辅助：wchar -> UTF-8
+// 将 wchar 转换为 UTF-8 编码
 static void wchar_to_utf8(const wchar_t* w, char* out, int outlen) {
     if (!w || !out)
         return;
@@ -31,42 +31,61 @@ static void wchar_to_utf8(const wchar_t* w, char* out, int outlen) {
 
 // 初始化 SDL UI
 int init_sdl_ui(int width, int height) {
+    // 初始化 SDL，失败返回 -1
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
         return -1;
+
+    // 初始化字体，失败返回 -1
     if (TTF_Init() != 0) {
         SDL_Quit();
         return -1;
     }
+
+    // 设置窗口尺寸
     win_w = width > 0 ? width : 1000;
     win_h = height > 0 ? height : 600;
+
+    // 创建窗口
     win =
         SDL_CreateWindow("ADR", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                          win_w, win_h, SDL_WINDOW_SHOWN);
+
+    // 窗口创建失败，清理并返回 -1
     if (!win) {
         TTF_Quit();
         SDL_Quit();
         return -1;
     }
+
+    // 创建渲染器
     renderer = SDL_CreateRenderer(
         win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+    // 渲染器创建失败，清理并返回 -1
     if (!renderer) {
         SDL_DestroyWindow(win);
         TTF_Quit();
         SDL_Quit();
         return -1;
     }
-    // 尝试加载常见中文字体，若不存在可替换路径
+
+    // 尝试加载常见中文字体，若不存在可替换路径，优先使用 微软雅黑 ttc
     const char* font_path = "C:\\Windows\\Fonts\\msyh.ttc";
     font = TTF_OpenFont(font_path, 16);
+
+    // ttc 加载失败，则回退到 msyh.ttf
     if (!font) {
         font_path = "C:\\Windows\\Fonts\\msyh.ttf";
         font = TTF_OpenFont(font_path, 16);
     }
+
+    // 失败，回退到 Arial 字体
     if (!font) {
-        // fallback to Arial
         font_path = "C:\\Windows\\Fonts\\arial.ttf";
         font = TTF_OpenFont(font_path, 16);
     }
+
+    // 这些字体都加载失败，清理并返回 -1
     if (!font) {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(win);
@@ -74,10 +93,13 @@ int init_sdl_ui(int width, int height) {
         SDL_Quit();
         return -1;
     }
+
+    // 成功，记录字体行高
     font_h = TTF_FontLineSkip(font);
     return 0;
 }
 
+// 关闭 SDL UI
 void shutdown_sdl_ui(void) {
     if (font) {
         TTF_CloseFont(font);
@@ -113,7 +135,7 @@ static void draw_text_utf8(int x, int y, const char* utf8, SDL_Color color) {
     SDL_DestroyTexture(tex);
 }
 
-// 公共：清空区域（像素）
+// 清空某一区域
 void clear_area(SHORT x, SHORT y, DWORD width, int height) {
     if (!renderer)
         return;
@@ -123,7 +145,7 @@ void clear_area(SHORT x, SHORT y, DWORD width, int height) {
 }
 
 // 绘制剧情区
-void redraw_story(int left_width, int rows) {
+void draw_story(int left_width, int rows) {
     if (!renderer)
         return;
     // 清左侧剧情区
@@ -136,7 +158,7 @@ void redraw_story(int left_width, int rows) {
     wchar_to_utf8(L"剧情", tmp, sizeof(tmp));
     draw_text_utf8(8, 4, tmp, (SDL_Color){255, 255, 255, 255});
 
-    // 内容起始 Y（与之前保持一致）
+    // 内容起始 y 坐标
     int y0 = 4 + font_h + 4;
 
     // 计算可见行数（向下可用高度 / 行高）
@@ -146,12 +168,13 @@ void redraw_story(int left_width, int rows) {
     if (visible_lines <= 0)
         return;
 
-    // 新逻辑：从数组开头显示最新的 visible_lines 行（新剧情在最上方）
+    // 显示最新的 visible_lines 行（新剧情显示在最上方）
     int cnt = get_story_line_count();
     int visible_cnt = cnt < visible_lines ? cnt : visible_lines;
 
     int y = y0;
     for (int i = 0; i < visible_cnt; ++i) {
+        // 从队尾读取剧情文本
         wchar_to_utf8(get_story_line(--cnt), tmp, sizeof(tmp));
         draw_text_utf8(8, y, tmp, (SDL_Color){220, 220, 220, 255});
         y += font_h;
@@ -200,7 +223,7 @@ void draw_scene_list(int left_width, int cols, int rows, int selected,
         }
         SDL_RenderFillRect(renderer, &ir);
 
-        // 文本
+        // 绘制场景名称
         wchar_to_utf8(get_scene(i)->title, tmp, sizeof(tmp));
         draw_text_utf8(item_x + 6, startY + 2, tmp,
                        (SDL_Color){255, 255, 255, 255});
@@ -209,8 +232,7 @@ void draw_scene_list(int left_width, int cols, int rows, int selected,
     }
 }
 
-// 修改：draw_buttons 取消覆盖整个按钮区背景，只绘制动作按钮列表（放在指定
-// startY）
+// 绘制按钮
 void draw_buttons(int left_width, int cols, int rows, const Button buttons[],
                   int btn_count, int selected, int bnt_start_y, int btn_width,
                   const wchar_t* title) {
@@ -220,7 +242,7 @@ void draw_buttons(int left_width, int cols, int rows, const Button buttons[],
     int x0 = left_width;
     int w = btn_width;
 
-    // 不再绘制整个区域背景或标题（场景列表负责背景与标题）
+    // 按钮起始 y 坐标
     int y = bnt_start_y;
     int item_h = font_h + 8;
     for (int i = 0; i < btn_count; i++) {
@@ -228,10 +250,12 @@ void draw_buttons(int left_width, int cols, int rows, const Button buttons[],
         wchar_t display_label[64];
 
         // 格式化显示文本到 display_labels
+        // 如果有倒计时，显示倒计时
         if (btn->countdown > 0) {
             swprintf_s(display_label, 64, L"%s (%d)", btn->label,
                        btn->countdown);
         } else {
+            // 没有倒计时，检查是否为工厂启用/暂停按钮
             if (btn->is_st == 1) {
                 swprintf_s(display_label, 64, L"%s (已启用 x%d)", btn->label,
                            inv_get_fac(btn->fac_id)->active_count);
@@ -240,10 +264,13 @@ void draw_buttons(int left_width, int cols, int rows, const Button buttons[],
                 swprintf_s(display_label, 64, L"%s (已暂停 x%d)", btn->label,
                            fac->count - fac->active_count);
             } else {
+                // 不是工厂启用/暂停按钮，若有关联的工厂，则说明是建造工厂的按钮
                 if (btn->fac_id != -1) {
+                    // cnt 记录当前已写入长度
                     int cnt =
                         swprintf_s(display_label, 64, L"%s: ", btn->label);
 
+                    // 显示建造该工厂所需的材料
                     const Ingredient* ing = &inv_get_fac(btn->fac_id)->ing;
                     for (int i = 0; i < ing->count; ++i) {
                         cnt += swprintf_s(
@@ -251,6 +278,7 @@ void draw_buttons(int left_width, int cols, int rows, const Button buttons[],
                             inv_get_item(ing->id[i])->label, ing->num[i]);
                     }
                 } else {
+                    // 没有关联的工厂，直接显示按钮标签
                     wcsncpy_s(display_label, 64, btn->label, _TRUNCATE);
                 }
             }
@@ -283,24 +311,31 @@ void draw_inventory(int left_width, int cols, int rows, int inv_start_x,
     SDL_Rect area = {x0, 0, w, win_h};
     SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
     SDL_RenderFillRect(renderer, &area);
+
+    // 仓库标题
     char tmp[256];
     wchar_to_utf8(L"仓库 | 每 10 秒产量", tmp, sizeof(tmp));
     draw_text_utf8(x0 + 8, 4, tmp, (SDL_Color){200, 200, 200, 255});
     int y = inv_start_y + font_h + 4;
 
+    // 显示所有已激活的物品
     int items_count = get_items_count();
     for (int i = 0; i < items_count; i++) {
         Item* item = inv_get_item(i);
         if (!item || !item->activated)
             continue;
         wchar_t buf[128];
+        // 物品后面显示每 10 秒产量
         swprintf_s(buf, 128, L"%s x%d | %+d", item->label, item->count,
                    item->output);
         wchar_to_utf8(buf, tmp, sizeof(tmp));
         draw_text_utf8(x0 + 8, y, tmp, (SDL_Color){200, 200, 200, 255});
         y += font_h;
     }
+    
+    y += font_h;
 
+    // 显示所有已激活的工厂
     int facs_count = get_facs_count();
     for (int i = 0; i < facs_count; i++) {
         Factory* fac = inv_get_fac(i);
@@ -314,19 +349,19 @@ void draw_inventory(int left_width, int cols, int rows, int inv_start_x,
     }
 }
 
-// init_ui：绘制初始界面并 present
+// 初始化界面并显示
 void init_ui(int left_width, int cols, int rows, int bnt_start_y, int btn_width,
              int inv_start_x, int inv_width) {
     if (!renderer)
         return;
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    redraw_story(left_width, rows);
-    // 初始按钮和仓库可以在 main 的 first update_ui_display 调用时绘制
+    draw_story(left_width, rows);
     draw_inventory(left_width, cols, rows, inv_start_x, 0, inv_width);
     SDL_RenderPresent(renderer);
 }
 
+// 更新 UI
 void update_ui_display(int left_width, int cols, int rows, int bnt_start_y,
                        int btn_width, int inv_start_x, int inv_width,
                        int cur_scene) {
@@ -336,8 +371,8 @@ void update_ui_display(int left_width, int cols, int rows, int bnt_start_y,
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    // 剧情区
-    redraw_story(left_width, rows);
+    // 绘制剧情区
+    draw_story(left_width, rows);
 
     // 场景列表（顶部）
     // 计算 sceneStartY 使其与 main 中 bnt_start_y 的计算保持一致：
@@ -351,7 +386,6 @@ void update_ui_display(int left_width, int cols, int rows, int bnt_start_y,
 
     const Scene* cur_sc = get_scene(cur_scene);
 
-    // 动作按钮
     draw_buttons(left_width, cols, rows, cur_sc->buttons, cur_sc->btn_count, 0,
                  bnt_start_y, btn_width, NULL);
 
@@ -360,8 +394,8 @@ void update_ui_display(int left_width, int cols, int rows, int bnt_start_y,
     SDL_RenderPresent(renderer);
 }
 
-// 返回字体行高（像素），供 main 使用以对齐项目布局
-int ui_get_font_height(void) {
+// 返回字体行高（像素），对齐项目布局
+int ui_get_font_height() {
     if (font == NULL) {
         // 未初始化字体时返回一个默认值
         return 18;

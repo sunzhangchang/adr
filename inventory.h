@@ -4,6 +4,7 @@
 
 #define MAX_INVENTORY_ITEMS 64
 
+// 物品枚举，以 ITEM_ 开头
 typedef enum {
     ITEM_WOOD = 0, // 木头
     ITEM_FOOD,     // 食物
@@ -13,6 +14,7 @@ typedef enum {
     ITEM_SHIP,     // 船
 } ItemType;
 
+// 工厂枚举，以 FAC_ 开头
 typedef enum {
     FAC_WOOD = 0, // 伐木场
     FAC_WATER,    // 水厂
@@ -22,6 +24,13 @@ typedef enum {
     FAC_SHIP,     // 造船厂
 } FactoryType;
 
+/**
+ * 物品结构体
+ * @public label 物品名称
+ * @public count 物品数量
+ * @public output 物品每 10 秒产量
+ * @public activated 物品是否已激活
+ */
 typedef struct {
     wchar_t label[32];
     int count;
@@ -29,18 +38,40 @@ typedef struct {
     int activated;
 } Item;
 
+/**
+ * 建造工厂所需材料
+ * @public id 材料物品 ID 数组
+ * @public num 材料物品数量数组
+ * @public count 材料种类数量
+ */
 typedef struct {
     int id[8];
     int num[8];
     int count;
 } Ingredient;
 
+/**
+ * 工厂生产所需材料及产出
+ * @public inputs 所需材料
+ * @public output_id 产出物品 ID
+ * @public output_num 产出物品数量
+ */
 typedef struct {
     Ingredient inputs;
     int output_id;
     int output_num;
 } Yield;
 
+/**
+ * 工厂结构体
+ * @public label 工厂名称
+ * @public count 工厂数量
+ * @public activated 工厂是否已激活
+ * @public active_count 工厂已启用的数量
+ * @public end_tick 工厂当前生产结束时间戳
+ * @public ing 建造工厂所需材料
+ * @public yield 工厂生产所需材料及产出
+ */
 typedef struct {
     wchar_t label[32];
     int count;

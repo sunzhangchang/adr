@@ -7,6 +7,7 @@
 static Scene scenes[MAX_SCENES];
 static int scene_count = 0;
 
+// 初始化场景
 void init_scenes(void) {
     scene_count = 0;
     Scene* s0 = &scenes[scene_count++];
@@ -26,6 +27,7 @@ Scene* get_scene(int idx) {
     return &scenes[idx];
 }
 
+// 为指定场景添加按钮
 int scene_add_button(int scene_idx, const Button* btn) {
     if (scene_idx < 0 || scene_idx >= scene_count)
         return -1;
