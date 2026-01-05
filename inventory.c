@@ -30,8 +30,8 @@ static const Ingredient ings[] = {
 };
 
 static const Yield yield[] = {
-    {{{}, {}, 0}, ITEM_WOOD, 5},
-    {{{ITEM_WOOD}, {10}, 1}, ITEM_WATER, 5},
+    {{{}, {}, 0}, ITEM_WOOD, 10},
+    {{{ITEM_WOOD}, {10}, 1}, ITEM_WATER, 10},
     {{{ITEM_WATER, ITEM_WOOD}, {10, 20}, 2}, ITEM_IRON, 5},
     {{{ITEM_WATER, ITEM_WOOD}, {10, 10}, 2}, ITEM_GLASS, 5},
     {{{ITEM_WATER, ITEM_GLASS}, {20, 10}, 1}, ITEM_FOOD, 5},
