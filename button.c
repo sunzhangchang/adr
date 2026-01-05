@@ -32,6 +32,14 @@ static ButtonAction action_from_string_local(const char* s) {
         return ACT_START_WATER_FAC;
     if (strcmp(s, "ACT_STOP_WATER_FAC") == 0)
         return ACT_STOP_WATER_FAC;
+    if (strcmp(s, "ACT_SHIP_FAC") == 0)
+        return ACT_SHIP_FAC;
+    if (strcmp(s, "ACT_START_SHIP_FAC") == 0)
+        return ACT_START_SHIP_FAC;
+    if (strcmp(s, "ACT_STOP_SHIP_FAC") == 0)
+        return ACT_STOP_SHIP_FAC;
+    if (strcmp(s, "ACT_SHIP") == 0)
+        return ACT_SHIP;
     return ACT_NONE;
 }
 
@@ -206,6 +214,9 @@ static int fk_pre_fish_count = 0;
 static int fk_pre_water_fac_flg = 0;
 static int fk_pre_iron_glass_fac_flg = 0;
 static int fk_pre_food_fac_flg = 0;
+static int fk_pre_ship_fac_flg = 0;
+
+static int fk_ship_btn = 0;
 
 #define FAC_ST(NAME)                                                           \
     case ACT_START_##NAME##_FAC: {                                             \
@@ -372,12 +383,73 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
     case ACT_FOOD_FAC: {
         if (build_fac(FAC_FOOD)) {
             add_story(get_story_text(STORY_FOOD_FAC_FAILED));
+        } else {
+            if (!fk_pre_ship_fac_flg) {
+                add_story(get_story_text(STORY_PRE_SHIP_FAC));
+
+                add_fac_button(L"造船厂", ACT_SHIP_FAC, ACT_START_SHIP_FAC,
+                               ACT_STOP_SHIP_FAC, FAC_SHIP);
+
+                activate_fac(FAC_SHIP, now);
+
+                fk_pre_ship_fac_flg = 1;
+            }
         }
 
         break;
     }
 
         FAC_ST(FOOD)
+
+    case ACT_SHIP_FAC: {
+        if (build_fac(FAC_SHIP)) {
+            add_story(get_story_text(STORY_SHIP_FAC_FAILED));
+        } else {
+            // 造船厂建成后可解锁造船按钮
+            if (!fk_ship_btn) {
+                add_story(get_story_text(STORY_SHIP_FAC_SUCCEEDED));
+
+                Button ship = new_button(L"造船", ACT_SHIP, 30);
+                scene_add_button(0, &ship);
+                activate_item(ITEM_SHIP);
+
+                fk_ship_btn = 1;
+            }
+        }
+
+        break;
+    }
+
+        FAC_ST(SHIP)
+
+    case ACT_SHIP: {
+        int fac_cnt = inv_get_fac(FAC_SHIP)->active_count;
+        if (fac_cnt == 0) {
+            add_story(get_story_text(STORY_NO_ACTIVE_SHIP_FAC));
+            break;
+        }
+
+        Item* ship = inv_get_item(ITEM_SHIP);
+        Item* wood = inv_get_item(ITEM_WOOD);
+        Item* glass = inv_get_item(ITEM_GLASS);
+        Item* iron = inv_get_item(ITEM_IRON);
+
+        int wood_needed = fac_cnt * 20;
+        int glass_needed = fac_cnt * 20;
+        int iron_needed = fac_cnt * 40;
+
+        if (wood->count < wood_needed || glass->count < glass_needed ||
+            iron->count < iron_needed) {
+            add_story(get_story_text(STORY_SHIP_FAILED));
+            break;
+        }
+
+        ship->count += fac_cnt;
+        wood->count -= wood_needed;
+        glass->count -= glass_needed;
+        iron->count -= iron_needed;
+        break;
+    }
 
     default:
         add_story(L"此按钮尚未实现行为。");

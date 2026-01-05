@@ -15,6 +15,11 @@ enum StoryText {
     STORY_GLASS_FAC_FAILED,
     STORY_PRE_FOOD_FAC,
     STORY_FOOD_FAC_FAILED,
+    STORY_PRE_SHIP_FAC,
+    STORY_SHIP_FAC_FAILED,
+    STORY_SHIP_FAC_SUCCEEDED,
+    STORY_NO_ACTIVE_SHIP_FAC,
+    STORY_SHIP_FAILED,
 };
 
 const wchar_t* get_story_text(int idx);

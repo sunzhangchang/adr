@@ -24,6 +24,10 @@ typedef enum {
     ACT_STOP_GLASS_FAC,
     ACT_START_FOOD_FAC,
     ACT_STOP_FOOD_FAC,
+    ACT_SHIP_FAC, // 造船厂
+    ACT_START_SHIP_FAC,
+    ACT_STOP_SHIP_FAC,
+    ACT_SHIP, // 造船
 } ButtonAction;
 
 // Button 模型

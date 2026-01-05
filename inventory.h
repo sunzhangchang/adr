@@ -10,6 +10,7 @@ typedef enum {
     ITEM_WATER,    // 淡水
     ITEM_GLASS,    // 玻璃
     ITEM_IRON,     // 钢铁
+    ITEM_SHIP,     // 船
 } ItemType;
 
 typedef enum {
@@ -18,6 +19,7 @@ typedef enum {
     FAC_IRON,     // 冶炼厂
     FAC_GLASS,    // 玻璃厂
     FAC_FOOD,     // 食品加工厂
+    FAC_SHIP,     // 造船厂
 } FactoryType;
 
 typedef struct {

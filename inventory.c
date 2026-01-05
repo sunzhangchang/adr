@@ -11,6 +11,7 @@ static const wchar_t* item_labels[] = {
     L"淡水", // ITEM_WATER
     L"玻璃", // ITEM_GLASS
     L"钢铁", // ITEM_IRON
+    L"船",   // ITEM_SHIP
 };
 
 static const wchar_t* fac_labels[] = {
@@ -19,6 +20,7 @@ static const wchar_t* fac_labels[] = {
     L"冶炼厂",     // FAC_IRON
     L"玻璃厂",     // FAC_GLASS
     L"食品加工厂", // FAC_FOOD
+    L"造船厂",     // FAC_SHIP
 };
 
 static const Ingredient ings[] = {
@@ -27,6 +29,7 @@ static const Ingredient ings[] = {
     {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {20, 20, 10}, 3},
     {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {20, 20, 10}, 3},
     {{ITEM_FOOD, ITEM_WOOD, ITEM_GLASS, ITEM_IRON}, {20, 20, 20, 10}, 4},
+    {{ITEM_FOOD, ITEM_WOOD, ITEM_IRON}, {50, 50, 30}, 3},
 };
 
 static const Yield yield[] = {
@@ -35,6 +38,7 @@ static const Yield yield[] = {
     {{{ITEM_WATER, ITEM_WOOD}, {10, 20}, 2}, ITEM_IRON, 5},
     {{{ITEM_WATER, ITEM_WOOD}, {10, 10}, 2}, ITEM_GLASS, 5},
     {{{ITEM_WATER, ITEM_GLASS}, {20, 10}, 1}, ITEM_FOOD, 5},
+    {{{}, {}, 0}, -1, 0},
 };
 
 int get_items_count() { return inv_count; }
