@@ -274,7 +274,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
         ++fk_pre_fish_count;
 
         Item* wood = inv_get_item(ITEM_WOOD);
-        wood->count += 1000;
+        wood->count += 10;
 
         // 点击两次伐木后解锁捕鱼和取水按钮
         if (fk_pre_fish_count == 2) {
@@ -297,7 +297,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_FISH: {
         Item* food = inv_get_item(ITEM_FOOD);
-        food->count += 1000;
+        food->count += 10;
 
         handle_pre_factory();
 
@@ -307,7 +307,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_WATER: {
         Item* water = inv_get_item(ITEM_WATER);
-        water->count += 1000;
+        water->count += 10;
 
         handle_pre_factory();
 
@@ -317,7 +317,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_GLASS: {
         Item* glass = inv_get_item(ITEM_GLASS);
-        glass->count += 500;
+        glass->count += 5;
 
         handle_pre_wood_fac(now);
 
@@ -327,7 +327,7 @@ void handle_button_click(Button* buttons, int count, int idx, DWORD now) {
 
     case ACT_IRON: {
         Item* iron = inv_get_item(ITEM_IRON);
-        iron->count += 500;
+        iron->count += 5;
 
         handle_pre_wood_fac(now);
 
